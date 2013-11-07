@@ -246,10 +246,8 @@ class ChildFixesEntityTestCase(unittest.TestCase):
         obj = RepresentMe()
         ent = ChildFixesEntity(obj)
 
-        try:
-            ent()
-        except Exception as e:
-            self.fail("Should not have raised %r" % e)
+        # should not throw
+        ent()
 
 
 class ChildBreaksEntityTestCase(unittest.TestCase):
@@ -310,7 +308,21 @@ class GetAttrSuppressedTestCase(unittest.TestCase):
         with self.assertRaisesRegexp(AttributeError, 'suppressed'):
             ent.foobar
 
-## GETITEM TESTS HERE
+
+class GetItemNotAFieldTestCase(unittest.TestCase):
+
+    def runTest(self):
+        ent = EmptyFieldsEntity()
+        with self.assertRaisesRegexp(KeyError, 'bloop'):
+            ent['bloop']
+
+
+class GetItemWorkingTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = MainEntity(obj)
+        self.assertEqual(ent['foobar'], 5)
 
 # some corner case tests
 class NonStringAliasTestCase(unittest.TestCase):
