@@ -3,6 +3,9 @@ import re
 DUNDER_MANGLE_RE = re.compile(r'__\w+?__|_Entity__\w+')
 BOOTSTRAP_ATTRS = ('_ALIAS_', '_FIELDS_', '_o')
 
+class SuppressField(Exception):
+    pass
+
 class Entity(dict):
 
     # list of fields to present
@@ -29,11 +32,6 @@ class Entity(dict):
         _FIELDS_ = tuple(_FIELDS_)
 
         for field in _FIELDS_:
-            # Set it to None so that
-            # PyObject_GetIter called on this dictionary
-            # will list all the keys
-            # we'll set the real value later using getitem
-
             # assert there's no collisions
             if field in BOOTSTRAP_ATTRS:
                 raise ValueError("Collision in %s with reserved attribute name %s" % (
@@ -41,37 +39,48 @@ class Entity(dict):
                     field,
                 ))
 
-            self[field] = None
+            if _ALIAS_ and field == _ALIAS_:
+                raise ValueError("Collication in %s between alias %s and fields" % (
+                    klass.__name__,
+                    _ALIAS_,
+                ))
+
         self._FIELDS_ = _FIELDS_
+        self.__reset_fields()
 
-    def __getattr_from_class(self, klass, attr):
-        try:
-            # look it up this class
-            value = klass.__dict__[attr]
-        except KeyError:
-            pass
-        else:
-            if callable(value):
-                return lambda : value(self)
+    def __reset_fields(self):
+        """
+        Clears out the inner dictionary, then fills it
+        using calling __resolve_attr on all the fields in _FIELDS_
+
+        If SuppressField is thrown for any field, that field is not
+        added to the dictionary
+        """
+        dict.clear(self)
+        for field in self._FIELDS_:
+            try:
+                value = self.__resolve_attr(field)
+            except SuppressField:
+                pass
             else:
-                return value
+                self[field] = value
 
-        # here if not in klass
-        # im also willing to look it up in base
-        # class that is an Entity! (recursion YAY)
-        for base_klass in klass.__bases__:
-            if issubclass(base_klass, Entity) and not base_klass is Entity:
-                try:
-                    return self.__getattr_from_class(base_klass, attr)
-                except AttributeError:
-                    pass
+    def __resolve_attr(self, attr):
+        """
+        Resolves an Attribute
+         - if it is __dunder__, call object.__getattribute__
+         - if it is __Mangled_method, call object.__getattribute__
+         - if it a bootstrap attribute (_FIELDS_, _ALIAS_, _o), return it from __dict__
+         - if _ALIAS_ is set and the attribute is that alias, return the _o wrapped object
 
-        raise AttributeError
+         - assert that it is a valid Field (in _FIELDS_)
+         - recursively check this and base classes for its presence using __getattr_from_class
+         - try and proxy it the _o wrapped object
+         - if a callable, call it
 
-    def __getitem__(self, attr):
-        return getattr(self, attr)
-
-    def __getattribute__(self, attr):
+        Throws an AttributeError if ultimately unable to find it
+        Can also throw a SuppressField exception if we want to suppress that field
+        """
         # dunders and mangled get sent through
         if DUNDER_MANGLE_RE.match(attr):
             return object.__getattribute__(self, attr)
@@ -117,14 +126,74 @@ class Entity(dict):
         else:
             return value
 
+    def __getattr_from_class(self, klass, attr):
+        """
+        Check for attr in the __dict__ of klass
+        If found,
+            if it's a callable, bind self to it and return it (bootleg bound method)
+            otherwise just return it
+
+        Otherwise, call this method recursively on any Entity-subclasses that
+        are a baseclass of klass.
+
+        Will raise AttributeError if unable to find attr anywhere.
+        """
+        try:
+            # look it up this class
+            value = klass.__dict__[attr]
+        except KeyError:
+            pass
+        else:
+            if callable(value):
+                return lambda : value(self)
+            else:
+                return value
+
+        # here if not in klass
+        # im also willing to look it up in base
+        # class that is an Entity! (recursion YAY)
+        for base_klass in klass.__bases__:
+            if issubclass(base_klass, Entity) and not base_klass is Entity:
+                try:
+                    return self.__getattr_from_class(base_klass, attr)
+                except AttributeError:
+                    pass
+
+        raise AttributeError
+
+    def __getitem__(self, attr):
+        """
+        If attr is in _FIELDS_, will pass it to getattr
+        Otherwise raised KeyError
+        """
+        # Only allow __getitem__ for unsuppressed fields
+        if not attr in self._FIELDS_:
+            raise KeyError
+        else:
+            return getattr(self, attr)
+
+    def __getattribute__(self, attr):
+        """
+        Calls __resolve_attr, turning a SuppressField exception into an AttributeError
+        """
+        try:
+            # Have to go the the Class here to avoid infinite recursion
+            return Entity.__resolve_attr(self, attr)
+        except SuppressField:
+            raise AttributeError("Field %s is suppressed in %s" % (
+                attr,
+                self.__class__.__name__,
+            ))
+
     def __dir__(self):
-        return list(self._FIELDS_)
+        return dict.keys(self)
 
     def __iter__(self):
-        return iter(self._FIELDS_)
+        return dict.__iter__(self)
 
     def __call__(self):
-        return dict((k, self[k]) for k in self)
+        self.__reset_fields()
+        return dict((f, self[f]) for f in self)
 
     def __rshift__(self, other):
         errstr = "Can only use >> entity shortcut with right hand side being {}"

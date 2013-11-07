@@ -86,6 +86,15 @@ CHILD_EXPECTED_HASH = {
     'subent_method': 'SUB',
 }
 
+class SuppressingEntity(entity.Entity):
+
+    _FIELDS_ = ['foobar']
+
+    def foobar(self):
+        if self._o.foobar < 1:
+            raise entity.SuppressField
+        else:
+            return self._o.foobar
 
 class BasicTestCase(unittest.TestCase):
 
@@ -132,6 +141,17 @@ class DirTest(unittest.TestCase):
 
         self.assertEqual(sorted(dir(ent)), sorted(MainEntity._FIELDS_))
 
+
+class SuppressingTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = SuppressingEntity(obj)
+
+        self.assertEqual(ent(), {'foobar' : 5})
+
+        obj.foobar = 0
+        self.assertEqual(ent(), {})
+
 if __name__ == "__main__":
     unittest.main()
-      
