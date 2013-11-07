@@ -1,5 +1,4 @@
 import unittest
-import json
 
 import entity
 
@@ -116,16 +115,6 @@ class CuteTestCase(unittest.TestCase):
         ent = MainEntity(obj)
 
         self.assertEqual(ent>>{}, MAIN_EXPECTED_HASH)
-
-
-class JSONTestCase(unittest.TestCase):
-
-    def runTest(self):
-        obj = RepresentMe()
-        ent = MainEntity(obj)
-
-        res = json.loads(json.dumps(ent()))
-        self.assertEqual(res, MAIN_EXPECTED_HASH)
 
 
 class ChildTestCase(unittest.TestCase):
