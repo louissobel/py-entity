@@ -1,7 +1,15 @@
 import re
+import keyword
 
 DUNDER_MANGLE_RE = re.compile(r'__\w+?__|_Entity__\w+')
+IDENTIFIER_RE = re.compile(r'^[_a-zA-Z]\w*$')
 BOOTSTRAP_ATTRS = ('_ALIAS_', '_FIELDS_', '_o')
+
+def is_legal_identifier(ident):
+    """
+    Checks if a given string is a legal identifer
+    """
+    return IDENTIFIER_RE.match(ident) and not keyword.iskeyword(ident)
 
 class SuppressField(Exception):
     pass
@@ -10,20 +18,25 @@ class Entity(object):
 
     # list of fields to present
     _FIELDS_ = None
+
+    # alias for the wrapped object `_o`
     _ALIAS_ = None
 
-    def __init__(self, o=None):
-
-        self._o = o
+    def __init__(self, obj=None):
 
         # store this to save calls to __getattribute__
         klass = self.__class__
 
         # copy this down
         _ALIAS_ = klass._ALIAS_
-        if _ALIAS_: # TODO check if it is a string?
-            setattr(self, _ALIAS_, o)
-        self._ALIAS_ = _ALIAS_
+
+        if _ALIAS_:
+            if not isinstance(_ALIAS_, basestring):
+                raise ValueError('_ALIAS_ %r must be a basestring' % _ALIAS_)
+            if not is_legal_identifier(_ALIAS_):
+                raise ValueError('_ALIAS_ %r must be a legal identifier' % _ALIAS_)
+
+            setattr(self, _ALIAS_, obj)
 
         # copy this down
         _FIELDS_ = klass._FIELDS_
@@ -45,6 +58,9 @@ class Entity(object):
                     _ALIAS_,
                 ))
 
+        # store these away
+        self._o = obj
+        self._ALIAS_ = _ALIAS_
         self._FIELDS_ = _FIELDS_
 
     def __reset_inner(self):
