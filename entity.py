@@ -50,7 +50,7 @@ class Entity(object):
     def __reset_inner(self):
         """
         Clears out the inner dictionary, then fills it
-        using calling __resolve_attr on all the fields in _FIELDS_
+        by calling __resolve_attr on all the fields in _FIELDS_
 
         If SuppressField is thrown for any field, that field is not
         added to the dictionary
@@ -169,7 +169,7 @@ class Entity(object):
         """
         # Only allow __getitem__ for unsuppressed fields
         if not attr in self._FIELDS_:
-            raise KeyError
+            raise KeyError(attr)
         else:
             return getattr(self, attr)
 
@@ -189,12 +189,9 @@ class Entity(object):
     def __dir__(self):
         return list(self._FIELDS_)
 
-    def __iter__(self):
-        return iter(self.__inner)
-
     def __call__(self):
-        self.__reset_inner()
-        return dict((f, self[f]) for f in self)
+        # iter calls __iter__
+        return dict(iter(self))
 
     def __rshift__(self, other):
         errstr = "Can only use >> entity shortcut with right hand side being {}"
@@ -204,3 +201,12 @@ class Entity(object):
             raise ValueError(errstr)
 
         return self()
+
+    def __iter__(self):
+        self.__reset_inner()
+
+        # Cache this locally
+        __inner = self.__inner
+        for field in self._FIELDS_:
+            if field in __inner:
+                yield (field, __inner[field])

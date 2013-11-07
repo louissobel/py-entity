@@ -155,5 +155,18 @@ class SuppressingTestCase(unittest.TestCase):
         obj.foobar = 0
         self.assertEqual(ent(), {})
 
+
+class SuppressingIterationTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = SuppressingEntity(obj)
+
+        self.assertEqual(list(ent), [('foobar', 5)])
+
+        obj.foobar = 0
+        self.assertEqual(list(ent), [])
+
+
 if __name__ == "__main__":
     unittest.main()
