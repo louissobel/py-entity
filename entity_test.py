@@ -89,7 +89,9 @@ CHILD_EXPECTED_HASH = {
 
 class SuppressingEntity(entity.Entity):
 
-    _FIELDS_ = ['foobar']
+    _FIELDS_ = ['hello', 'foobar', 'a_value']
+
+    hello = 7
 
     def foobar(self):
         if self._o.foobar < 1:
@@ -150,10 +152,17 @@ class SuppressingTestCase(unittest.TestCase):
         obj = RepresentMe()
         ent = SuppressingEntity(obj)
 
-        self.assertEqual(ent(), {'foobar' : 5})
+        self.assertEqual(ent(), {
+            'hello' : 7,
+            'foobar' : 5,
+            'a_value' : 100,
+        })
 
         obj.foobar = 0
-        self.assertEqual(ent(), {})
+        self.assertEqual(ent(), {
+            'hello' : 7,
+            'a_value' : 100,
+        })
 
 
 class SuppressingIterationTestCase(unittest.TestCase):
@@ -162,10 +171,17 @@ class SuppressingIterationTestCase(unittest.TestCase):
         obj = RepresentMe()
         ent = SuppressingEntity(obj)
 
-        self.assertEqual(list(ent), [('foobar', 5)])
+        self.assertEqual(list(ent), [
+            ('hello', 7),
+            ('foobar', 5),
+            ('a_value', 100),
+        ])
 
         obj.foobar = 0
-        self.assertEqual(list(ent), [])
+        self.assertEqual(list(ent), [
+            ('hello', 7),
+            ('a_value', 100),
+        ])
 
 
 if __name__ == "__main__":

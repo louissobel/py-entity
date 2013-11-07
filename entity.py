@@ -219,6 +219,10 @@ class Entity(object):
         return self()
 
     def __iter__(self):
+        """
+        Yields field, value pairs
+        for non-supressed fields in order of _FIELDS_
+        """
         self.__reset_inner()
 
         # Cache this locally
