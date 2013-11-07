@@ -163,7 +163,9 @@ class CuteTestCase(unittest.TestCase):
         obj = RepresentMe()
         ent = MainEntity(obj)
 
-        self.assertEqual(ent>>{}, MAIN_EXPECTED_HASH)
+        a = {}
+        self.assertEqual(ent>>a, MAIN_EXPECTED_HASH)
+        self.assertEqual(a, MAIN_EXPECTED_HASH)
 
 
 class ChildTestCase(unittest.TestCase):
@@ -371,7 +373,7 @@ class CuteWrongArgTypeTestCase(unittest.TestCase):
 
     def runTest(self):
         ent = EmptyFieldsEntity()
-        with self.assertRaisesRegexp(ValueError, 'right hand side being {}'):
+        with self.assertRaisesRegexp(ValueError, 'right hand side being empty dict'):
             ent>>"not a string"
 
 
@@ -379,7 +381,7 @@ class CuteNotEmptyDictionaryTestCase(unittest.TestCase):
 
     def runTest(self):
         ent = EmptyFieldsEntity()
-        with self.assertRaisesRegexp(ValueError, 'right hand side being {}'):
+        with self.assertRaisesRegexp(ValueError, 'right hand side being empty dict'):
             ent>>{'im a' : 'non-empty dictionary'}
 
 if __name__ == "__main__":

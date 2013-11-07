@@ -213,13 +213,14 @@ class Entity(object):
         return dict(iter(self))
 
     def __rshift__(self, other):
-        errstr = "Can only use >> entity shortcut with right hand side being {}"
+        errstr = "Can only use >> entity shortcut with right hand side being empty dict"
         if not isinstance(other, dict):
             raise ValueError(errstr)
         if other:
             raise ValueError(errstr)
 
-        return self()
+        other.update(self())
+        return other
 
     def __iter__(self):
         """
