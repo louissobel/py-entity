@@ -86,6 +86,7 @@ CHILD_EXPECTED_HASH = {
     'subent_method': 'SUB',
 }
 
+
 class SuppressingEntity(entity.Entity):
 
     _FIELDS_ = ['foobar']
@@ -95,6 +96,7 @@ class SuppressingEntity(entity.Entity):
             raise entity.SuppressField
         else:
             return self._o.foobar
+
 
 class BasicTestCase(unittest.TestCase):
 
@@ -120,7 +122,7 @@ class JSONTestCase(unittest.TestCase):
         obj = RepresentMe()
         ent = MainEntity(obj)
 
-        res = json.loads(json.dumps(ent)) # no ()!
+        res = json.loads(json.dumps(ent()))
         self.assertEqual(res, MAIN_EXPECTED_HASH)
 
 

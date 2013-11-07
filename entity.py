@@ -6,7 +6,7 @@ BOOTSTRAP_ATTRS = ('_ALIAS_', '_FIELDS_', '_o')
 class SuppressField(Exception):
     pass
 
-class Entity(dict):
+class Entity(object):
 
     # list of fields to present
     _FIELDS_ = None
@@ -46,9 +46,8 @@ class Entity(dict):
                 ))
 
         self._FIELDS_ = _FIELDS_
-        self.__reset_fields()
 
-    def __reset_fields(self):
+    def __reset_inner(self):
         """
         Clears out the inner dictionary, then fills it
         using calling __resolve_attr on all the fields in _FIELDS_
@@ -56,14 +55,16 @@ class Entity(dict):
         If SuppressField is thrown for any field, that field is not
         added to the dictionary
         """
-        dict.clear(self)
+        new_inner = {}
         for field in self._FIELDS_:
             try:
                 value = self.__resolve_attr(field)
             except SuppressField:
                 pass
             else:
-                self[field] = value
+                new_inner[field] = value
+
+        self.__inner = new_inner
 
     def __resolve_attr(self, attr):
         """
@@ -186,13 +187,13 @@ class Entity(dict):
             ))
 
     def __dir__(self):
-        return dict.keys(self)
+        return list(self._FIELDS_)
 
     def __iter__(self):
-        return dict.__iter__(self)
+        return iter(self.__inner)
 
     def __call__(self):
-        self.__reset_fields()
+        self.__reset_inner()
         return dict((f, self[f]) for f in self)
 
     def __rshift__(self, other):
