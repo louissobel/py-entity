@@ -2,6 +2,8 @@ import unittest
 
 import entity
 
+########################################
+# Test Fixtures
 
 class RepresentMe(object):
 
@@ -99,6 +101,53 @@ class SuppressingEntity(entity.Entity):
             return self._o.foobar
 
 
+# Some broken entities
+class BrokenEntity(entity.Entity):
+    _FIELDS_ = ['haha', 'idontexist']
+
+
+class ChildBrokenEntity(BrokenEntity):
+    pass
+
+
+class ChildFixesEntity(BrokenEntity):
+    _FIELDS_ = ['haha']
+
+
+class ChildBreaksEntity(MainEntity):
+    _FIELDS_ = ['idontexist']
+
+# some corner case entities
+class NonStringAliasEntity(entity.Entity):
+    _FIELDS_ = ['foobar']
+    _ALIAS_ = []
+
+
+class BadIdentifierAliasEntity(entity.Entity):
+    _FIELDS_ = ['foobar']
+    _ALIAS_ = '$$$ dfkj dfjds'
+
+
+class EmptyFieldsEntity(entity.Entity):
+    pass
+
+
+class ReservedWordFieldEntity(entity.Entity):
+    _FIELDS_ = ['_FIELDS_']
+
+
+class AliasAsAFieldEntity(entity.Entity):
+    _FIELDS_ = ['hello', 'wrapped', 'foo', 'bar']
+    _ALIAS_ = 'wrapped'
+
+
+class DunderInFieldEntity(entity.Entity):
+    _FIELDS_ = ['hello', '__dunder__']
+
+
+########################################
+# Test Cases
+
 class BasicTestCase(unittest.TestCase):
 
     def runTest(self):
@@ -172,6 +221,138 @@ class SuppressingIterationTestCase(unittest.TestCase):
             ('a_value', 100),
         ])
 
+
+class BrokenEntityTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = BrokenEntity(obj)
+
+        with self.assertRaisesRegexp(AttributeError, 'Cannot find') as ae:
+            ent()
+
+class BrokenChildEntityTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = ChildBrokenEntity(obj)
+
+        with self.assertRaisesRegexp(AttributeError, 'Cannot find') as ae:
+            ent()
+
+class ChildFixesEntityTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = ChildFixesEntity(obj)
+
+        try:
+            ent()
+        except Exception as e:
+            self.fail("Should not have raised %r" % e)
+
+
+class ChildBreaksEntityTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = ChildBreaksEntity(obj)
+
+        with self.assertRaisesRegexp(AttributeError, 'Cannot find') as ae:
+            ent()
+
+
+class GetAttrSimpleTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = MainEntity(obj)
+        self.assertEqual(ent.snow, 'COLD')
+        self.assertEqual(ent.haha, 'hehe')
+
+
+class GetAttrBootstrapTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = MainEntity(obj)
+        self.assertEqual(ent._ALIAS_, 'wrapped')
+        self.assertEqual(ent._o, obj)
+
+
+class GetAttrBadFieldTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = MainEntity(obj)
+
+        with self.assertRaisesRegexp(AttributeError, 'no field'):
+            ent.idontexist
+
+
+class GetAttrAliasTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = MainEntity(obj)
+        self.assertEqual(ent.wrapped, obj)
+
+
+class GetAttrSuppressedTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        ent = SuppressingEntity(obj)
+
+        self.assertEqual(ent.foobar, 5)
+
+        obj.foobar = 0
+        with self.assertRaisesRegexp(AttributeError, 'suppressed'):
+            ent.foobar
+
+## GETITEM TESTS HERE
+
+# some corner case tests
+class NonStringAliasTestCase(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'basestring'):
+            NonStringAliasEntity()
+
+
+class BadIdentifierAliasTestCase(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'legal identifier'):
+            BadIdentifierAliasEntity()
+
+
+class EmptyFieldsTestCase(unittest.TestCase):
+
+    def runTest(self):
+        ent = EmptyFieldsEntity()
+        self.assertEqual(ent(), {})
+
+
+class ReservedWordFieldTestCase(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'reserved attribute'):
+            ReservedWordFieldEntity()
+
+
+class AliasAsAFieldTestCase(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'between'):
+            AliasAsAFieldEntity()
+
+
+class DunderInFieldTestCase(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'double underscore'):
+            DunderInFieldEntity()
 
 if __name__ == "__main__":
     unittest.main()

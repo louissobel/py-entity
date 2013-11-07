@@ -30,7 +30,7 @@ class Entity(object):
         # copy this down
         _ALIAS_ = klass._ALIAS_
 
-        if _ALIAS_:
+        if _ALIAS_ is not None:
             if not isinstance(_ALIAS_, basestring):
                 raise ValueError('_ALIAS_ %r must be a basestring' % _ALIAS_)
             if not is_legal_identifier(_ALIAS_):
