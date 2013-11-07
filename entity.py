@@ -58,6 +58,9 @@ class Entity(object):
                     _ALIAS_,
                 ))
 
+            if field.startswith('__'):
+                raise ValueError("Fields cannot begin with double underscore")
+
         # store these away
         self._o = obj
         self._ALIAS_ = _ALIAS_
