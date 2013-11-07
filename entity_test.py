@@ -354,5 +354,21 @@ class DunderInFieldTestCase(unittest.TestCase):
         with self.assertRaisesRegexp(ValueError, 'double underscore'):
             DunderInFieldEntity()
 
+
+class CuteWrongArgTypeTestCase(unittest.TestCase):
+
+    def runTest(self):
+        ent = EmptyFieldsEntity()
+        with self.assertRaisesRegexp(ValueError, 'right hand side being {}'):
+            ent>>"not a string"
+
+
+class CuteNotEmptyDictionaryTestCase(unittest.TestCase):
+
+    def runTest(self):
+        ent = EmptyFieldsEntity()
+        with self.assertRaisesRegexp(ValueError, 'right hand side being {}'):
+            ent>>{'im a' : 'non-empty dictionary'}
+
 if __name__ == "__main__":
     unittest.main()
