@@ -33,7 +33,7 @@ as `phone_number_private` is not `True`.
 Using an `Entity`:
 
 ```python
-class UserEntity(entity.Entity):
+class UserEntity(pyentity.Entity):
     _FIELDS_ = [
         'id',
         'name',
@@ -52,7 +52,7 @@ class UserEntity(entity.Entity):
 
     def phone_number(self):
         if self.user.phone_number_private:
-            raise entity.SuppressField
+            raise pyentity.SuppressField
         return self.user.phone_number
 ```
 

@@ -1,6 +1,6 @@
 import datetime
 import json
-import entity
+import pyentity
 
 # Some object, looks like..
 class GeorgeWashington(object):
@@ -14,7 +14,7 @@ class GeorgeWashington(object):
     birthday = datetime.datetime(1732, 2, 22, 0, 0)
 
 # An entity...
-class UserEntity(entity.Entity):
+class UserEntity(pyentity.Entity):
     _FIELDS_ = [
         'id',
         'name',
@@ -33,7 +33,7 @@ class UserEntity(entity.Entity):
 
     def phone_number(self):
         if self.user.phone_number_private:
-            raise entity.SuppressField
+            raise pyentity.SuppressField
         return self.user.phone_number
 
 # Then..

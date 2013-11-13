@@ -1,6 +1,6 @@
 import unittest
 
-import entity
+from pyentity import Entity, SuppressField
 
 ########################################
 # Test Fixtures
@@ -23,7 +23,7 @@ class RepresentMe(object):
         return 'PROPERTASTIC'
 
 
-class MainEntity(entity.Entity):
+class MainEntity(Entity):
     _FIELDS_ = [
         'snow',                 # class attr of the entity
         'haha',                 # class attr of the obj
@@ -88,7 +88,7 @@ CHILD_EXPECTED_HASH = {
 }
 
 
-class SuppressingEntity(entity.Entity):
+class SuppressingEntity(Entity):
 
     _FIELDS_ = ['hello', 'foobar', 'a_value']
 
@@ -96,13 +96,13 @@ class SuppressingEntity(entity.Entity):
 
     def foobar(self):
         if self._o.foobar < 1:
-            raise entity.SuppressField
+            raise SuppressField
         else:
             return self._o.foobar
 
 
 # Some broken entities
-class BrokenEntity(entity.Entity):
+class BrokenEntity(Entity):
     _FIELDS_ = ['haha', 'idontexist']
 
 
@@ -118,30 +118,30 @@ class ChildBreaksEntity(MainEntity):
     _FIELDS_ = ['idontexist']
 
 # some corner case entities
-class NonStringAliasEntity(entity.Entity):
+class NonStringAliasEntity(Entity):
     _FIELDS_ = ['foobar']
     _ALIAS_ = []
 
 
-class BadIdentifierAliasEntity(entity.Entity):
+class BadIdentifierAliasEntity(Entity):
     _FIELDS_ = ['foobar']
     _ALIAS_ = '$$$ dfkj dfjds'
 
 
-class EmptyFieldsEntity(entity.Entity):
+class EmptyFieldsEntity(Entity):
     pass
 
 
-class ReservedWordFieldEntity(entity.Entity):
+class ReservedWordFieldEntity(Entity):
     _FIELDS_ = ['_FIELDS_']
 
 
-class AliasAsAFieldEntity(entity.Entity):
+class AliasAsAFieldEntity(Entity):
     _FIELDS_ = ['hello', 'wrapped', 'foo', 'bar']
     _ALIAS_ = 'wrapped'
 
 
-class DunderInFieldEntity(entity.Entity):
+class DunderInFieldEntity(Entity):
     _FIELDS_ = ['hello', '__dunder__']
 
 
