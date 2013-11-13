@@ -6,3 +6,5 @@ htmlcov/
 
 # distutils
 build/
+dist/
+MANIFEST
