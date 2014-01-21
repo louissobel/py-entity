@@ -348,10 +348,9 @@ class MissingAuxObjectTestCase(unittest.TestCase):
     def runTest(self):
         obj = RepresentMe()
         aux1 = AuxObject()
-        ent = MultipleAuxObjectEntity(obj, aux1=aux1)
 
         with self.assertRaisesRegexp(TypeError, 'aux2'):
-            ent()
+            MultipleAuxObjectEntity(obj, aux1=aux1)
 
 class UnexpectedAuxObjectTestCase(unittest.TestCase):
 
@@ -361,10 +360,8 @@ class UnexpectedAuxObjectTestCase(unittest.TestCase):
         aux2 = AuxObject()
         aux3 = AuxObject()
 
-        ent = MultipleAuxObjectEntity(obj, aux1=aux1, aux2=aux2, aux3=aux3)
-
         with self.assertRaisesRegexp(TypeError, 'aux3'):
-            ent()
+            MultipleAuxObjectEntity(obj, aux1=aux1, aux2=aux2, aux3=aux3)
 
 class GetAttrSimpleTestCase(unittest.TestCase):
 
