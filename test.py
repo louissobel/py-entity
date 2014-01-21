@@ -23,6 +23,12 @@ class RepresentMe(object):
         return 'PROPERTASTIC'
 
 
+class AuxObject(object):
+
+    foobar = 5
+    goobar = 10
+
+
 class MainEntity(Entity):
     _FIELDS_ = [
         'snow',                 # class attr of the entity
@@ -32,9 +38,11 @@ class MainEntity(Entity):
         'ent_alias_method',     # method of the entity using the alias field
         'a_value',              # method of the obj
         'a_property',           # @property of the obj
+        'aux_object_method',    # method of entity accessing aux_object
     ]
 
     _ALIAS_ = 'wrapped'
+    _AUX_OBJECTS_ = ['aux_object']
 
     snow = 'COLD'
     fire = 'HOT'
@@ -45,6 +53,9 @@ class MainEntity(Entity):
     def ent_alias_method(self):
         return self.wrapped.a_method('echoWRAP')
 
+    def aux_object_method(self):
+        return self.aux_object.foobar
+
 MAIN_EXPECTED_HASH = {
     'snow' : 'COLD',
     'haha' : 'hehe',
@@ -53,6 +64,7 @@ MAIN_EXPECTED_HASH = {
     'ent_alias_method' : 'echoWRAP',
     'a_value' : 100,
     'a_property' : 'PROPERTASTIC',
+    'aux_object_method' : 5,
 }
 
 
@@ -69,6 +81,8 @@ class ChildEntity(MainEntity):
         'subent_method',        # a method of the sub-entity
         'fire',                 # an attribute of the base entity that is overwritten
     ]
+
+    _AUX_OBJECT_ = [] # child overrides this
 
     fire = 'VERY HOT'
 
@@ -101,6 +115,28 @@ class SuppressingEntity(Entity):
             return self._o.foobar
 
 
+class MultipleAuxObjectEntity(Entity):
+
+    _FIELDS_ = ['aux1hit', 'aux2hit', 'objhit']
+    _ALIAS_ = 'obj'
+    _AUX_OBJECTS_ = ['aux1', 'aux2']
+
+    def aux1hit(self):
+        return self.aux1.foobar
+
+    def aux2hit(self):
+        return self.aux2.goobar
+
+    def objhit(self):
+        return self.obj.foobar
+
+MULTIPLE_AUX_EXPECTED_HASH = {
+    'aux1hit' : 5,
+    'aux2hit' : 10,
+    'objhit' : 5,
+}
+
+
 # Some broken entities
 class BrokenEntity(Entity):
     _FIELDS_ = ['haha', 'idontexist']
@@ -120,7 +156,7 @@ class ChildBreaksEntity(MainEntity):
 # some corner case entities
 class NonStringAliasEntity(Entity):
     _FIELDS_ = ['foobar']
-    _ALIAS_ = []
+    _ALIAS_ = {}
 
 
 class BadIdentifierAliasEntity(Entity):
@@ -145,6 +181,23 @@ class DunderInFieldEntity(Entity):
     _FIELDS_ = ['hello', '__dunder__']
 
 
+class BadAuxTypeEntity(Entity):
+    _FIELDS_ = ['foobar']
+    _AUX_OBJECT_ = 'string'
+    # TODO this case
+
+
+class ReservedWordAuxEntity(Entity):
+    _FIELDS_ = ['foobar']
+    _AUX_OBJECT_ = 'hehe'
+    # TODO this case
+
+
+class AuxFieldCollisionEntity(Entity):
+    _FIELDS_ = ['foobar', 'foo']
+    _AUX_OBJECT_ = ['foo']
+    # TODO this case
+
 ########################################
 # Test Cases
 
@@ -152,7 +205,8 @@ class BasicTestCase(unittest.TestCase):
 
     def runTest(self):
         obj = RepresentMe()
-        ent = MainEntity(obj)
+        aux = AuxObject()
+        ent = MainEntity(obj, aux_object=aux)
 
         self.assertEqual(ent(), MAIN_EXPECTED_HASH)
 
@@ -161,7 +215,8 @@ class CuteTestCase(unittest.TestCase):
 
     def runTest(self):
         obj = RepresentMe()
-        ent = MainEntity(obj)
+        aux = AuxObject()
+        ent = MainEntity(obj, aux_object=aux)
 
         a = {}
         self.assertEqual(ent>>a, MAIN_EXPECTED_HASH)
@@ -224,6 +279,16 @@ class SuppressingIterationTestCase(unittest.TestCase):
         ])
 
 
+class MultipleAuxTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        aux1 = AuxObject()
+        aux2 = AuxObject()
+        ent = MultipleAuxObjectEntity(obj, aux1=aux1, aux2=aux2)
+
+        self.assertEqual(ent, MULTIPLE_AUX_EXPECTED_HASH)
+
 class BrokenEntityTestCase(unittest.TestCase):
 
     def runTest(self):
@@ -261,6 +326,27 @@ class ChildBreaksEntityTestCase(unittest.TestCase):
         with self.assertRaisesRegexp(AttributeError, 'Cannot find') as ae:
             ent()
 
+
+class MissingAuxObjectTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        aux1 = AuxObject()
+        ent = MultipleAuxObjectEntity(obj, aux1=aux1)
+
+        with self.assertRaisesRegexp(TypeError, 'aux2'):
+            ent()
+
+class UnexpectedAuxObjectTestCase(unittest.TestCase):
+    obj = RepresentMe()
+    aux1 = AuxObject()
+    aux2 = AuxObject()
+    aux3 = AuxObject()
+
+    ent = MultipleAuxObjectEntity(obj, aux1=aux1, aux2=aux2, aux3=aux3)
+
+    with self.assertRaisesRegexp(TypeError, 'aux3'):
+        ent()
 
 class GetAttrSimpleTestCase(unittest.TestCase):
 
@@ -367,6 +453,27 @@ class DunderInFieldTestCase(unittest.TestCase):
     def runTest(self):
         with self.assertRaisesRegexp(ValueError, 'double underscore'):
             DunderInFieldEntity()
+
+
+class BadAuxTypeTestCase(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'list'):
+            BadAuxTypeEntity()
+
+
+class ReservedWordAuxTextCase(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'reserved attribute'):
+            ReservedWordAuxEntity()
+
+
+class AuxFieldCollisionTestCase(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'collision'):
+            AuxFieldCollisionEntity()
 
 
 class CuteWrongArgTypeTestCase(unittest.TestCase):
