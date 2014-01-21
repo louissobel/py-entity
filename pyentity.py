@@ -68,12 +68,54 @@ class Entity(object):
         _AUX_OBJECTS_ = klass._AUX_OBJECTS_
         if _AUX_OBJECTS_ is None:
             _AUX_OBJECTS_ = []
+
+        if not isinstance(_AUX_OBJECTS_, list):
+            raise ValueError("_AUX_OBJECTS_ must be a list")
+
+        for aux_object_name in _AUX_OBJECTS_:
+            # make sure
+            # - not reserved
+            # - doesn't collide with _FIELDS_
+            # - doesn't collid with _ALIAS_
+            if aux_object_name in BOOTSTRAP_ATTRS:
+                raise ValueError("Collision in %s with reserved attribute name %s and aux object" % (
+                    klass.__name__,
+                    aux_object_name,
+                ))
+
+            if aux_object_name in _FIELDS_:
+                raise ValueError("Collision in %s between field %s and aux object" % (
+                    klass.__name__,
+                    aux_object_name,
+                ))
+
+            if _ALIAS_ and aux_object_name == _ALIAS_:
+                raise ValueError("Collision in %s between alias %s and aux object" % (
+                    klass.__name__,
+                    aux_object_name,
+                ))
+
+            if aux_object_name.startswith('__'):
+                raise ValueError("aux object cannot begin with double underscore")
+
+            if not is_legal_identifier(aux_object_name):
+                raise ValueError("aux object %s is not a legal identifier" % aux_object_name)
+
         _AUX_OBJECTS_ = set(_AUX_OBJECTS_)
         aux_dict = {}
+        received_aux_objects = set()
 
         for k, v in kwargs.items():
-            # TODO assert
-            aux_dict[k] = v
+            if k in _AUX_OBJECTS_:
+                aux_dict[k] = v
+            else:
+                raise TypeError("Unexpected aux object: %s" % k)
+
+            received_aux_objects.add(k)
+
+        missing = _AUX_OBJECTS_ - received_aux_objects
+        if missing:
+            raise TypeError("Missing aux object: %s" % missing.pop())
 
         # store these away
         self._o = obj
