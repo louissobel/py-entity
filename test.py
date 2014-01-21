@@ -82,7 +82,7 @@ class ChildEntity(MainEntity):
         'fire',                 # an attribute of the base entity that is overwritten
     ]
 
-    _AUX_OBJECT_ = [] # child overrides this
+    _AUX_OBJECTS_ = [] # child overrides this
 
     fire = 'VERY HOT'
 
@@ -183,20 +183,34 @@ class DunderInFieldEntity(Entity):
 
 class BadAuxTypeEntity(Entity):
     _FIELDS_ = ['foobar']
-    _AUX_OBJECT_ = 'string'
-    # TODO this case
+    _AUX_OBJECTS_ = 'string'
 
 
 class ReservedWordAuxEntity(Entity):
     _FIELDS_ = ['foobar']
-    _AUX_OBJECT_ = 'hehe'
-    # TODO this case
+    _AUX_OBJECTS_ = '_AUX_OBJECTS_'
 
 
 class AuxFieldCollisionEntity(Entity):
     _FIELDS_ = ['foobar', 'foo']
-    _AUX_OBJECT_ = ['foo']
-    # TODO this case
+    _AUX_OBJECTS_ = ['foo']
+
+
+class DunderInAuxObjectsEntity(Entity):
+    _FIELDS_ = ['foobar']
+    _AUX_OBJECTS_ = ['__dunder__']
+
+
+class InvalidIdentifierAuxObjectsEntity(Entity):
+    _FIELDS_ = ['foobar']
+    _AUX_OBJECTS_ = ['BAD IDENTIFIER BAD IDENTIFER $#@)(  3290908 )']
+
+
+class AliasAuxObjectsCollisionEntity(Entity):
+    _FIELDS_ = ['foobar']
+    _ALIAS_ = 'lolol'
+    _AUX_OBJECTS_ = ['lolol']
+
 
 ########################################
 # Test Cases
@@ -287,7 +301,7 @@ class MultipleAuxTestCase(unittest.TestCase):
         aux2 = AuxObject()
         ent = MultipleAuxObjectEntity(obj, aux1=aux1, aux2=aux2)
 
-        self.assertEqual(ent, MULTIPLE_AUX_EXPECTED_HASH)
+        self.assertEqual(ent(), MULTIPLE_AUX_EXPECTED_HASH)
 
 class BrokenEntityTestCase(unittest.TestCase):
 
@@ -477,6 +491,26 @@ class AuxFieldCollisionTestCase(unittest.TestCase):
         with self.assertRaisesRegexp(ValueError, 'collision'):
             AuxFieldCollisionEntity()
 
+
+class DunderInAuxObjectsTestCase(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'double underscore'):
+            DunderInAuxObjectsEntity()
+
+
+class InvalidIdentifierAuxObjectsEntity(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'legal identifier'):
+            InvalidIdentifierAuxObjectsEntity()
+
+
+class AliasAuxObjectsCollisionTestCase(unittest.TestCase):
+
+    def runTest(self):
+        with self.assertRaisesRegexp(ValueError, 'collision between alias'):
+            AliasAuxObjectsCollisionEntity()
 
 class CuteWrongArgTypeTestCase(unittest.TestCase):
 
