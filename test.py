@@ -338,15 +338,17 @@ class MissingAuxObjectTestCase(unittest.TestCase):
             ent()
 
 class UnexpectedAuxObjectTestCase(unittest.TestCase):
-    obj = RepresentMe()
-    aux1 = AuxObject()
-    aux2 = AuxObject()
-    aux3 = AuxObject()
 
-    ent = MultipleAuxObjectEntity(obj, aux1=aux1, aux2=aux2, aux3=aux3)
+    def runTest(self):
+        obj = RepresentMe()
+        aux1 = AuxObject()
+        aux2 = AuxObject()
+        aux3 = AuxObject()
 
-    with self.assertRaisesRegexp(TypeError, 'aux3'):
-        ent()
+        ent = MultipleAuxObjectEntity(obj, aux1=aux1, aux2=aux2, aux3=aux3)
+
+        with self.assertRaisesRegexp(TypeError, 'aux3'):
+            ent()
 
 class GetAttrSimpleTestCase(unittest.TestCase):
 
