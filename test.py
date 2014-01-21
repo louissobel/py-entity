@@ -152,6 +152,7 @@ class ChildFixesEntity(BrokenEntity):
 
 class ChildBreaksEntity(MainEntity):
     _FIELDS_ = ['idontexist']
+    _AUX_OBJECTS_ = []
 
 # some corner case entities
 class NonStringAliasEntity(Entity):
@@ -250,7 +251,8 @@ class DirTest(unittest.TestCase):
 
     def runTest(self):
         obj = RepresentMe()
-        ent = MainEntity(obj)
+        aux = AuxObject()
+        ent = MainEntity(obj, aux_object=aux)
 
         self.assertEqual(sorted(dir(ent)), sorted(MainEntity._FIELDS_))
 
@@ -368,7 +370,8 @@ class GetAttrSimpleTestCase(unittest.TestCase):
 
     def runTest(self):
         obj = RepresentMe()
-        ent = MainEntity(obj)
+        aux = AuxObject()
+        ent = MainEntity(obj, aux_object=aux)
         self.assertEqual(ent.snow, 'COLD')
         self.assertEqual(ent.haha, 'hehe')
 
@@ -377,7 +380,8 @@ class GetAttrBootstrapTestCase(unittest.TestCase):
 
     def runTest(self):
         obj = RepresentMe()
-        ent = MainEntity(obj)
+        aux = AuxObject()
+        ent = MainEntity(obj, aux_object=aux)
         self.assertEqual(ent._ALIAS_, 'wrapped')
         self.assertEqual(ent._o, obj)
 
@@ -386,7 +390,8 @@ class GetAttrBadFieldTestCase(unittest.TestCase):
 
     def runTest(self):
         obj = RepresentMe()
-        ent = MainEntity(obj)
+        aux = AuxObject()
+        ent = MainEntity(obj, aux_object=aux)
 
         with self.assertRaisesRegexp(AttributeError, 'no field'):
             ent.idontexist
@@ -396,8 +401,18 @@ class GetAttrAliasTestCase(unittest.TestCase):
 
     def runTest(self):
         obj = RepresentMe()
-        ent = MainEntity(obj)
+        aux = AuxObject()
+        ent = MainEntity(obj, aux_object=aux)
         self.assertEqual(ent.wrapped, obj)
+
+
+class GetAttrAuxObjectTestCase(unittest.TestCase):
+
+    def runTest(self):
+        obj = RepresentMe()
+        aux = AuxObject()
+        ent = MainEntity(obj, aux_object=aux)
+        self.assertEqual(ent.aux_object, aux)
 
 
 class GetAttrSuppressedTestCase(unittest.TestCase):
@@ -425,7 +440,8 @@ class GetItemWorkingTestCase(unittest.TestCase):
 
     def runTest(self):
         obj = RepresentMe()
-        ent = MainEntity(obj)
+        aux = AuxObject()
+        ent = MainEntity(obj, aux_object=aux)
         self.assertEqual(ent['foobar'], 5)
 
 # some corner case tests
