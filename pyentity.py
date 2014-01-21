@@ -3,7 +3,7 @@ import keyword
 
 DUNDER_MANGLE_RE = re.compile(r'__\w+?__|_Entity__\w+')
 IDENTIFIER_RE = re.compile(r'^[_a-zA-Z]\w*$')
-BOOTSTRAP_ATTRS = ('_ALIAS_', '_FIELDS_', '_o')
+BOOTSTRAP_ATTRS = ('_ALIAS_', '_FIELDS_', '_o', '_AUX_OBJECTS_')
 
 def is_legal_identifier(ident):
     """
@@ -22,7 +22,10 @@ class Entity(object):
     # alias for the wrapped object `_o`
     _ALIAS_ = None
 
-    def __init__(self, obj=None):
+    # list of required aux objects
+    _AUX_OBJECTS_ = None
+
+    def __init__(self, obj=None, **kwargs):
 
         # store this to save calls to __getattribute__
         klass = self.__class__
@@ -61,10 +64,23 @@ class Entity(object):
             if field.startswith('__'):
                 raise ValueError("Fields cannot begin with double underscore")
 
+        # copy this down
+        _AUX_OBJECTS_ = klass._AUX_OBJECTS_
+        if _AUX_OBJECTS_ is None:
+            _AUX_OBJECTS_ = []
+        _AUX_OBJECTS_ = set(_AUX_OBJECTS_)
+        aux_dict = {}
+
+        for k, v in kwargs.items():
+            # TODO assert
+            aux_dict[k] = v
+
         # store these away
         self._o = obj
         self._ALIAS_ = _ALIAS_
         self._FIELDS_ = _FIELDS_
+
+        self._AUX_OBJECTS_ = aux_dict
 
     def __reset_inner(self):
         """
@@ -90,8 +106,9 @@ class Entity(object):
         Resolves an Attribute
          - if it is __dunder__, call object.__getattribute__
          - if it is __Mangled_method, call object.__getattribute__
-         - if it a bootstrap attribute (_FIELDS_, _ALIAS_, _o), return it from __dict__
+         - if it a bootstrap attribute (_FIELDS_, _ALIAS_, _o, _AUX_OBJECTS_), return it from __dict__
          - if _ALIAS_ is set and the attribute is that alias, return the _o wrapped object
+         - if the attribute is in _AUX_OBJECTS_, return it
 
          - assert that it is a valid Field (in _FIELDS_)
          - recursively check this and base classes for its presence using __getattr_from_class
@@ -115,11 +132,14 @@ class Entity(object):
             return __dict__[attr]
 
         # load as local to save a recursive call to __getattribute__
-        _ALIAS_, _FIELDS_, _o = [__dict__[a] for a in BOOTSTRAP_ATTRS]
+        _ALIAS_, _FIELDS_, _o, _AUX_OBJECTS_ = [__dict__[a] for a in BOOTSTRAP_ATTRS]
 
         if _ALIAS_:
             if attr == _ALIAS_:
                 return _o
+
+        if attr in _AUX_OBJECTS_:
+            return _AUX_OBJECTS_[attr]
 
         if not attr in _FIELDS_:
             raise AttributeError('Entity %s has no field %s' % (
