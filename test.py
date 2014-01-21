@@ -189,7 +189,7 @@ class BadAuxTypeEntity(Entity):
 
 class ReservedWordAuxEntity(Entity):
     _FIELDS_ = ['foobar']
-    _AUX_OBJECTS_ = '_AUX_OBJECTS_'
+    _AUX_OBJECTS_ = ['_AUX_OBJECTS_']
 
 
 class AuxFieldCollisionEntity(Entity):
@@ -501,7 +501,7 @@ class ReservedWordAuxTextCase(unittest.TestCase):
 class AuxFieldCollisionTestCase(unittest.TestCase):
 
     def runTest(self):
-        with self.assertRaisesRegexp(ValueError, 'collision'):
+        with self.assertRaisesRegexp(ValueError, 'Collision'):
             AuxFieldCollisionEntity()
 
 
@@ -512,7 +512,7 @@ class DunderInAuxObjectsTestCase(unittest.TestCase):
             DunderInAuxObjectsEntity()
 
 
-class InvalidIdentifierAuxObjectsEntity(unittest.TestCase):
+class InvalidIdentifierAuxObjectsTestCase(unittest.TestCase):
 
     def runTest(self):
         with self.assertRaisesRegexp(ValueError, 'legal identifier'):
@@ -522,7 +522,7 @@ class InvalidIdentifierAuxObjectsEntity(unittest.TestCase):
 class AliasAuxObjectsCollisionTestCase(unittest.TestCase):
 
     def runTest(self):
-        with self.assertRaisesRegexp(ValueError, 'collision between alias'):
+        with self.assertRaisesRegexp(ValueError, 'Collision'):
             AliasAuxObjectsCollisionEntity()
 
 class CuteWrongArgTypeTestCase(unittest.TestCase):
